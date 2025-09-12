@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Carta de Aniversario</title>
+    <style>
+        :root {
+            --pink: #ff4d8b;
+            --rose: #ff6fa3;
+            --gold: #ffd166;
+            --bg1: #0f1724;
+            --bg2: #421f57
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: 'Segoe UI', Roboto, Arial;
+        }
+
+        body {
+            background: radial-gradient(circle at 10% 10%, rgba(255, 110, 180, 0.12), transparent 10%),
+                linear-gradient(180deg, var(--bg1), var(--bg2));
+            color: #fff;
+            overflow: hidden
+        }
+
+        /* Fireworks canvas */
+        #fwCanvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0
+        }
+
+        /* floating sparkles */
+        .sparkle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1
+        }
+
+        /* card */
+        .scene {
+            position: relative;
+            z-index: 3;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px
+        }
+
+        .card {
+            width: min(920px, 95%);
+            max-width: 1100px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+            border-radius: 18px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+            padding: 28px;
+            backdrop-filter: blur(6px);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.04)
+        }
+
+        /* envelope effect */
+        .envelope {
+            width: 100%;
+            height: 220px;
+            position: relative;
+            margin-bottom: 18px
+        }
+
+        .envelope .flap {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            width: 92%;
+            height: 120px;
+            background: linear-gradient(135deg, var(--pink), var(--rose));
+            border-radius: 10px 10px 60px 60px;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+            transition: transform 700ms cubic-bezier(.2, .9, .3, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 20px;
+            color: white
+        }
+
+        .envelope.closed .flap {
+            transform: translate(-50%, -90%)
+        }
+
+        .envelope.open .flap {
+            transform: translate(-50%, -20%) rotateX(0deg)
+        }
+
+        .letter {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 40px;
+            width: 88%;
+            height: 140px;
+            background: linear-gradient(180deg, #fff, #fff0f5);
+            border-radius: 8px;
+            padding: 18px;
+            color: #222;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            transform-origin: center top;
+            transition: opacity 600ms, transform 600ms;
+        }
+
+        .envelope.open .letter {
+            opacity: 1;
+            transform: translateX(-50%) translateY(12px)
+        }
+
+        .letter h1 {
+            margin: 0;
+            font-size: 22px;
+            color: var(--pink);
+            letter-spacing: 0.5px
+        }
+
+        .letter p {
+            margin: 8px 0 0;
+            line-height: 1.4
+        }
+
+        /* message box with typewriter */
+        .messageBox {
+            margin-top: 10px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(255, 255, 255, 0.02));
+            padding: 18px;
+            border-radius: 10px
+        }
+
+        .typed {
+            font-size: 18px;
+            color: #eee;
+            min-height: 92px
+        }
+
+        /* footer with buttons */
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 14px
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600
+        }
+
+        .btn--pink {
+            background: var(--pink);
+            color: white
+        }
+
+        .btn--ghost {
+            background: transparent;
+            color: var(--gold);
+            border: 1px solid rgba(255, 255, 255, 0.08)
+        }
+
+        /* hearts floating */
+        .heart {
+            position: absolute;
+            z-index: 3;
+            width: 18px;
+            height: 16px;
+            transform: rotate(-45deg)
+        }
+
+        .heart:before,
+        .heart:after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, var(--pink), var(--rose))
+        }
+
+        .heart:before {
+            top: -9px;
+            left: 0
+        }
+
+        .heart:after {
+            left: 9px;
+            top: 0
+        }
+
+        @media (max-width:600px) {
+            .letter {
+                height: 120px
+            }
+
+            .envelope {
+                height: 180px
+            }
+        }
+
+        .confetti {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 4
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 0
+            }
+
+            50% {
+                opacity: 1
+            }
+
+            100% {
+                opacity: 0
+            }
+        }
+
+        /* ---------- Collage styles ---------- */
+        .collage {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .collage img {
+            position: absolute;
+            max-width: 120px;
+            border-radius: 14px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transform: scale(0.7) rotate(-3deg);
+            transition: opacity 1.2s ease, transform 1.2s ease;
+        }
+
+        .collage img.show {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="fwCanvas"></canvas>
+    <div id="confetti" class="confetti"></div>
+    <div id="collage" class="collage"></div>
+
+    <div class="scene">
+        <div class="card">
+            <div class="envelope closed" id="envelope">
+                <div class="flap">Para mi amor</div>
+                <div class="letter" id="letter">
+                    <h1>Mi amor,</h1>
+                    <p id="textoCarta">
+                    </p>
+                </div>
+            </div>
+
+            <div class="messageBox">
+                <div class="typed" id="typed"></div>
+                <div class="controls">
+                    <button class="btn btn--pink" id="abrirBtn">Abrir carta ✨</button>
+                    <button class="btn btn--ghost" id="fuegosBtn">Mostrar fuegos 🎆</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---------- Typewriter ----------
+        const mensaje = `Eres mi alegría diaria. Desde la primera sonrisa hasta el último suspiro del día, cada momento contigo se siente como casa. Gracias por ser mi compañera, mi risa, mi paz y mi aventura. Feliz aniversario, mi vida. Te amo hoy y siempre.`;
+        const typedEl = document.getElementById('typed');
+        let idx = 0;
+        function tipeo() {
+            if (idx <= mensaje.length) {
+                typedEl.innerHTML = mensaje.slice(0, idx) + (idx % 2 == 0 ? "_" : "");
+                idx++; setTimeout(tipeo, 28);
+            } else { typedEl.innerHTML = mensaje; }
+        }
+        tipeo();
+
+        // ---------- Envelope ----------
+        const envelope = document.getElementById('envelope');
+        const abrirBtn = document.getElementById('abrirBtn');
+        abrirBtn.addEventListener('click', () => {
+            envelope.classList.remove('closed');
+            envelope.classList.add('open');
+            spawnHearts(12);
+            startConfetti(40);
+        });
+
+        // ---------- Confetti ----------
+        function startConfetti(amount = 30) {
+            const container = document.getElementById('confetti');
+            for (let i = 0; i < amount; i++) {
+                const el = document.createElement('div');
+                el.style.position = 'absolute';
+                el.style.width = '10px'; el.style.height = '16px';
+                el.style.left = Math.random() * 100 + '%';
+                el.style.top = '-10%';
+                el.style.opacity = 1;
+                el.style.transform = `rotate(${Math.random() * 360}deg)`;
+                el.style.background = ['#ffd166', '#ff6fa3', '#8bd3dd', '#ffc6ff'][Math.floor(Math.random() * 4)];
+                el.style.borderRadius = '3px';
+                el.style.zIndex = 4;
+                container.appendChild(el);
+                const duration = 2000 + Math.random() * 2000;
+                el.animate([
+                    { transform: `translateY(0) rotate(${Math.random() * 360}deg)`, opacity: 1 },
+                    { transform: `translateY(110vh) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+                ], { duration: duration, easing: 'cubic-bezier(.2,.8,.2,1)' }).onfinish = () => el.remove();
+            }
+        }
+
+        // ---------- Hearts ----------
+        function spawnHearts(n) {
+            for (let i = 0; i < n; i++) {
+                const h = document.createElement('div'); h.className = 'heart';
+                document.body.appendChild(h);
+                h.style.left = (40 + Math.random() * 20) + '%';
+                h.style.top = (20 + Math.random() * 20) + '%';
+                h.style.opacity = 0; h.style.transform += ' scale(0)';
+                const delay = i * 80;
+                setTimeout(() => {
+                    h.animate([
+                        { opacity: 0, transform: 'translateY(0) scale(0)' },
+                        { opacity: 1, transform: 'translateY(-40px) scale(1.1)' },
+                        { opacity: 0, transform: 'translateY(-100px) scale(0.6)' }
+                    ], { duration: 1200, easing: 'cubic-bezier(.2,.9,.3,1)' }).onfinish = () => h.remove();
+                }, delay);
+            }
+        }
+
+        // ---------- Fireworks ----------
+        const canvas = document.getElementById('fwCanvas');
+        const ctx = canvas.getContext('2d');
+        let W, H; function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+        addEventListener('resize', resize); resize();
+
+        function rand(min, max) { return Math.random() * (max - min) + min }
+        class Firework {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.particles = []; this.hue = Math.floor(rand(0, 360));
+                for (let i = 0; i < rand(20, 40); i++) {
+                    this.particles.push({
+                        x: this.x, y: this.y, vx: Math.cos(rand(0, Math.PI * 2)) * rand(1, 6), vy: Math.sin(rand(0, Math.PI * 2)) * rand(1, 6),
+                        life: rand(40, 90), age: 0, size: Math.random() * 2 + 1, color: `hsl(${this.hue}, 80%, ${rand(45, 60)}%)`
+                    });
+                }
+            }
+            update() { this.particles.forEach(p => { p.vy += 0.06; p.x += p.vx; p.y += p.vy; p.age++; }); this.particles = this.particles.filter(p => p.age < p.life) }
+            draw(ctx) { this.particles.forEach(p => { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); }); }
+            isDead() { return this.particles.length === 0 }
+        }
+
+        let fireworks = [];
+        function loop() {
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(0, 0, W, H);
+            fireworks.forEach(f => { f.update(); f.draw(ctx) });
+            fireworks = fireworks.filter(f => !f.isDead());
+            requestAnimationFrame(loop);
+        }
+        loop();
+        function launchFW(x, y) { fireworks.push(new Firework(x, y)); }
+        addEventListener('click', e => { launchFW(e.clientX, e.clientY); spawnHearts(3); });
+
+        const fuegosBtn = document.getElementById('fuegosBtn');
+        if (fuegosBtn) {
+            fuegosBtn.addEventListener('click', () => {
+                for (let i = 0; i < 12; i++) {
+                    setTimeout(() => {
+                        launchFW(rand(100, W - 100), rand(100, H - 200));
+                    }, i * 220);
+                }
+                startConfetti(60);
+            });
+        }
+        setInterval(() => { launchFW(rand(80, W - 80), rand(80, H - 200)); }, 6000);
+
+        // ---------- Sparkles ----------
+        for (let i = 0; i < 30; i++) {
+            const s = document.createElement('div');
+            s.className = 'sparkle';
+            s.style.left = Math.random() * 100 + '%';
+            s.style.top = Math.random() * 100 + '%';
+            s.style.width = '4px'; s.style.height = '4px';
+            s.style.borderRadius = '50%';
+            s.style.background = 'rgba(255,255,255,0.8)';
+            s.style.opacity = 0;
+            s.style.animation = `blink ${1 + Math.random() * 2}s ease-in-out ${Math.random() * 2}s infinite`;
+            document.body.appendChild(s);
+        }
+
+        // ---------- Type short letter ----------
+        const textoCarta = document.getElementById('textoCarta');
+        let idx2 = 0;
+        const short = `Hoy celebramos otro aniversario juntos y no puedo dejar de pensar en lo afortunado que soy por tenerte a mi lado. Desde el primer día me enamoré de ti, y con el tiempo he descubierto que ese amor no solo crece, sino que se fortalece con cada experiencia, con cada sonrisa y con cada momento compartido.
+        Quiero que sepas lo mucho que te amo, lo especial que eres en mi vida y lo agradecido que estoy con Dios y con la vida por haberte puesto en mi camino. Eres mi compañera, mi refugio, mi apoyo incondicional y mi mayor alegría.
+        También quiero decirte lo profundamente feliz que me hace el hijo que me diste. Es el regalo más grande que alguien puede recibir. Cada vez que lo veo, veo en él una parte de ti, una parte de mí, y sobre todo, el reflejo del amor tan grande que nos une. Gracias por darme la bendición de ser padre a tu lado.
+        Prometo seguir amándote con todo mi corazón, cuidando de ti, de nuestra familia y de ese hogar que juntos hemos construido. Eres y siempre serás el amor de mi vida.
+        Feliz aniversario, mi amor.
+        Con todo mi corazón,
+        Tu esposo ❤️`;
+        function typeShort() {
+            if (idx2 <= short.length) {
+                textoCarta.textContent = short.slice(0, idx2);
+                idx2++;
+                setTimeout(typeShort, 35);
+            }
+        }
+        setTimeout(typeShort, 900);
+
+        // ---------- Collage de fotos ----------
+        const fotos = [
+            "img/foto1.png",
+            "img/foto2.png",
+            "img/foto3.jpg",
+            "img/foto4.png",
+
+            //"img/foto5.jpg"
+        ];
+        const collage = document.getElementById("collage");
+        const posiciones = [
+            { top: "5%", left: "10%" },
+            { top: "15%", right: "8%" },
+            { bottom: "10%", left: "12%" },
+            { bottom: "15%", right: "15%" },
+            { top: "50%", left: "5%" },
+            { top: "55%", right: "5%" }
+        ];
+        let fotoIndex = 0;
+        function mostrarFoto() {
+            if (fotoIndex >= fotos.length) fotoIndex = 0;
+            const img = document.createElement("img");
+            img.src = fotos[fotoIndex];
+            const pos = posiciones[Math.floor(Math.random() * posiciones.length)];
+            Object.assign(img.style, pos);
+            collage.appendChild(img);
+            setTimeout(() => img.classList.add("show"), 100);
+            setTimeout(() => {
+                img.classList.remove("show");
+                setTimeout(() => img.remove(), 1000);
+            }, 8000);
+            fotoIndex++;
+        }
+        setInterval(mostrarFoto, 4000);
+
+        // ---------- Escape key ----------
+        addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                fireworks = [];
+                document.getElementById('confetti').innerHTML = '';
+            }
+        });
+    </script>
+</body>
+
+</html>
