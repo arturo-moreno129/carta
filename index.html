@@ -107,7 +107,8 @@
             transform: translateX(-50%);
             top: 40px;
             width: 88%;
-            height: 100%;
+            max-height: 300px;
+            /* ✅ límite para no desbordar */
             background: linear-gradient(180deg, #fff, #fff0f5);
             border-radius: 8px;
             padding: 18px;
@@ -116,6 +117,28 @@
             opacity: 0;
             transform-origin: center top;
             transition: opacity 600ms, transform 600ms;
+            box-sizing: border-box;
+            overflow-y: auto;
+            /* ✅ scroll interno */
+        }
+
+        /* scroll personalizado */
+        .letter::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .letter::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 10px;
+        }
+
+        .letter::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .letter::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.5);
         }
 
         .envelope.open .letter {
@@ -207,7 +230,8 @@
 
         @media (max-width:600px) {
             .letter {
-                height: 120px
+                max-height: 200px;
+                /* ✅ scroll también en móvil */
             }
 
             .envelope {
@@ -258,10 +282,41 @@
             opacity: 1;
             transform: scale(1) rotate(0deg);
         }
+
+        #music-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff4e50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease;
+            z-index: 9999;
+        }
+
+        #music-btn:hover {
+            transform: scale(1.1);
+            background: #ff2e3a;
+        }
     </style>
 </head>
 
 <body>
+    <audio id="bg-music" loop>
+        <source src="audios/SinBandera.mp3" type="audio/mpeg">
+        Tu navegador no soporta audio en HTML5.
+    </audio>
+
+    <!-- Botón de música -->
+    <button id="music-btn">🎵</button>
+
+
     <canvas id="fwCanvas"></canvas>
     <div id="confetti" class="confetti"></div>
     <div id="collage" class="collage"></div>
@@ -303,11 +358,22 @@
         // ---------- Envelope ----------
         const envelope = document.getElementById('envelope');
         const abrirBtn = document.getElementById('abrirBtn');
+        const music = document.getElementById("bg-music");
+        //const btn = document.getElementById("music-btn");
+        let isPlaying = false;
         abrirBtn.addEventListener('click', () => {
             envelope.classList.remove('closed');
             envelope.classList.add('open');
             spawnHearts(12);
             startConfetti(40);
+            if (isPlaying) {
+                music.pause();
+                btn.textContent = "▶️"; // mostrar play
+            } else {
+                music.play();
+                btn.textContent = "⏸️"; // mostrar pausa
+            }
+            isPlaying = !isPlaying;
         });
 
         // ---------- Confetti ----------
@@ -434,12 +500,22 @@
 
         // ---------- Collage de fotos ----------
         const fotos = [
-            "img/foto1.png",
-            "img/foto2.png",
+            "img/foto1.jpg",
+            "img/foto2.jpg",
             "img/foto3.jpg",
-            "img/foto4.png",
-
-            //"img/foto5.jpg"
+            "img/foto4.jpg",
+            "img/foto5.jpg",
+            "img/foto6.jpg",
+            "img/foto7.jpg",
+            "img/foto8.jpg",
+            "img/foto9.jpg",
+            "img/foto10.jpg",
+            "img/foto11.jpg",
+            "img/foto12.jpg",
+            "img/foto13.jpg",
+            "img/foto14.jpg",
+            "img/foto15.jpg",
+            "img/foto16.jpg",
         ];
         const collage = document.getElementById("collage");
         const posiciones = [
@@ -465,7 +541,7 @@
             }, 8000);
             fotoIndex++;
         }
-        setInterval(mostrarFoto, 4000);
+        setInterval(mostrarFoto, 3000);
 
         // ---------- Escape key ----------
         addEventListener('keydown', (e) => {
@@ -474,6 +550,25 @@
                 document.getElementById('confetti').innerHTML = '';
             }
         });
+
+        //const music = document.getElementById("bg-music");
+        const btn = document.getElementById("music-btn");
+        //let isPlaying = false;
+
+        btn.addEventListener("click", () => {
+            if (isPlaying) {
+                music.pause();
+                btn.textContent = "▶️"; // mostrar play
+            } else {
+                music.play();
+                btn.textContent = "⏸️"; // mostrar pausa
+            }
+            isPlaying = !isPlaying;
+        });
+
+        // volumen bajo de inicio
+        //music.volume = 0.3;
+
     </script>
 </body>
 
